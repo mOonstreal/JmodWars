@@ -1,28 +1,55 @@
 
 GM = GM or GAMEMODE
 
-GM.TeamBased = true 
+GM.TeamBased = false
 
 function GM:Initialize()
-    print("Режим загружен!")
+    print("bybybyby ok!")
 end
 
-TEAM_RED = 1
-TEAM_BLUE = 2
-
-team.SetUp(TEAM_RED, "Красные", Color(255, 50, 50))
-team.SetUp(TEAM_BLUE, "Синие", Color(50, 50, 255))
-
-hook.Add("InitPostEntity", "CreateCustomSpawns", function()
-    -- Создаём спавн для команды 1 (Красные)
-    local spawn1 = ents.Create("info_player_RedTeam")
-    spawn1:SetPos(Vector(1000, 0, 100)) -- Координаты X, Y, Z
-    spawn1:SetAngles(Angle(0, 90, 0))   -- Угол поворота
-    spawn1:Spawn()
-    
-    -- Создаём спавн для команды 2 (Синие)
-    local spawn2 = ents.Create("info_player_BlueTeam")
-    spawn2:SetPos(Vector(-1000, 0, 100))
-    spawn2:SetAngles(Angle(0, -90, 0))
-    spawn2:Spawn()
+-- При первом заходе игрока
+hook.Add("PlayerInitialSpawn", "SetupPlayerMoney", function(ply)
+    ply:SetMoney(3000) -- Стартовые деньги (можно сохранять в БД)
 end)
+
+-- При смерти (опционально: штраф за смерть)
+hook.Add("PlayerDeath", "PenaltyOnDeath", function(ply)
+    ply:AddMoney(-200) -- Игрок теряет 50$
+end)
+
+-- Добавить в shared.lua
+util.AddNetworkString("BM_BuyItem")
+
+-- Методы для денег
+local PLAYER = FindMetaTable("Player")
+
+function PLAYER:SetMoney(amount)
+    self:SetNWInt("BM_Money", math.max(0, amount))
+end
+
+function PLAYER:GetMoney()
+    return self:GetNWInt("BM_Money", 0)
+end
+
+function PLAYER:AddMoney(amount)
+    self:SetMoney(self:GetMoney() + amount)
+end
+
+-- Обработка покупки
+net.Receive("BM_BuyItem", function(len, ply)
+    if not IsValid(ply) then return end
+    
+    local itemClass = net.ReadString()
+    local price = net.ReadUInt(32)
+    
+    if ply:GetMoney() < price then
+        ply:ChatPrint("No money!")
+        return
+    end
+    
+    ply:AddMoney(-price)
+    ply:Give(itemClass)
+    ply:ChatPrint("You buy: " .. itemClass)
+end)
+-- На сервере (например, в shared.lua)
+player.GetAll()[1]:SetNWInt("BM_Money", 1000)

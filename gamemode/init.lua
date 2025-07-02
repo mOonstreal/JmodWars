@@ -9,42 +9,35 @@ GM.Website = ""
 
 DeriveGamemode("base") 
 -- Игрок присоединился
+-- В самом начале gamemode/init.lua
+if SERVER then
+    AddCSLuaFile("player_class/player.lua") -- Для синхронизации с клиентом
+end
 function GM:PlayerSpawn(ply)
     ply:SetHealth(100)
-    ply:Give("weapon_crowbar")  -- Выдаем оружие
+    ply:Give("weapon_physgun")           -- Выдаем оружие
     ply:SetupHands()
-
-    -- Распределение по командам (если режим командный)
-    if not ply:Team() or ply:Team() == TEAM_UNASSIGNED then
-        ply:SetTeam(math.random(TEAM_RED, TEAM_BLUE))
-    end
+end
+if SERVER then
+    include("player_class/player.lua")
+    AddCSLuaFile("player_class/player.lua")
 end
 
--- Убийство игрока
-function GM:PlayerDeath(victim, inflictor, attacker)
-    if victim == attacker then return end
-    if attacker:IsPlayer() then
-        attacker:AddFrags(1)  -- Даем очки за убийство
+util.AddNetworkString("BuyItem")
+
+net.Receive("BuyItem", function(len, ply)
+    local itemClass = net.ReadString()
+    local price = net.ReadUInt(32)
+
+    if ply:GetMoney() >= price then
+        ply:AddMoney(-price)
+        ply:Give(itemClass)
+        if not ply.GetMoney then
+        ErrorNoHalt("[JModWars] GetMoney not found for player " .. ply:Nick())
+        return
     end
-end
-
-function GM:PlayerSelectSpawn(ply)
-    local teamSpawns = {}
-
-    -- Собираем все спавн-поинты для команды игрока
-    if ply:Team() == TEAM_RED then
-        teamSpawns = ents.FindByClass("info_player_RedTeam") -- Для красных
-    elseif ply:Team() == TEAM_BLUE then
-        teamSpawns = ents.FindByClass("info_player_BlueTeam") -- Для синих
+        ply:ChatPrint("You buy " .. itemClass .. " for " .. price .. "$!")
     else
-        teamSpawns = ents.FindByClass("info_player_start") -- Дефолтный спавн
+        ply:ChatPrint("No money, go do it VanieJob!")
     end
-
-    -- Если есть подходящие спавны, выбираем случайный
-    if #teamSpawns > 0 then
-        return teamSpawns[math.random(#teamSpawns)]
-    end
-
-    -- Если ничего не нашли, возвращаем стандартный спавн
-    return self.BaseClass:PlayerSelectSpawn(ply)
-end
+end)
