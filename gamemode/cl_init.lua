@@ -1,11 +1,11 @@
 ﻿include("shared.lua")
 
--- Клиентская инициализация
-function GM:Initialize()
-    print("Клиентская часть загружена!")
-end
 
--- Кэш материалов
+function GM:Initialize()
+    print("Client worked!")
+end
+local currentMoney = 0
+
 local MATERIAL_CACHE = {}
 
 local function SafeMaterial(path)
@@ -16,7 +16,7 @@ local function SafeMaterial(path)
     return MATERIAL_CACHE[path]
 end
 
--- Цветовая схема
+
 local COLORS = {
     BG = Color(15, 15, 20),
     ACCENT = Color(180, 40, 40),
@@ -24,7 +24,7 @@ local COLORS = {
     TEXT_DARK = Color(160, 160, 160)
 }
 
--- Шрифты
+-- shrift
 surface.CreateFont("BM_Title", {
     font = "Impact",
     size = 32,
@@ -37,7 +37,7 @@ surface.CreateFont("BM_ItemName", {
     size = 18,
     weight = 800
 })
--- Шрифт для денег (добавить после других шрифтов)
+-- shrift
 surface.CreateFont("BM_Money", {
     font = "Trebuchet MS",
     size = 28,
@@ -45,7 +45,7 @@ surface.CreateFont("BM_Money", {
     shadow = true
 })
 
--- Основное меню
+-- Main menu
 function OpenBlackMarketMenu()
     local frame = vgui.Create("DFrame")
     frame:SetSize(650, 750)
@@ -55,33 +55,30 @@ function OpenBlackMarketMenu()
     frame:Center()
     frame:MakePopup()
     
-    -- Стиль окна
+
     frame.Paint = function(self, w, h)
-    -- Тёмный фон с текстурой "грязи"
+
     draw.RoundedBox(0, 0, 0, w, h, COLORS.BG)
     surface.SetDrawColor(30, 30, 35, 50)
     surface.DrawRect(0, 0, w, h)
     
-    -- Красная окантовка
+    -- Okontovka 
     surface.SetDrawColor(COLORS.ACCENT)
     surface.DrawOutlinedRect(0, 0, w, h, 2)
     
-    -- Заголовок и деньги (НОВЫЙ КОД)
-    local title = "ЧЁРНЫЙ РЫНОК"
+    local title = "Black Market"
     local money = LocalPlayer():GetNWInt("BM_Money", 0)
     
-    -- Отрисовка заголовка
     surface.SetFont("BM_Title")
     local titleW, titleH = surface.GetTextSize(title)
     draw.SimpleText(title, "BM_Title", 20, 15, COLORS.ACCENT)
     
-    -- Отрисовка денег справа
     draw.SimpleText(money.."$", "BM_Money", 30 + titleW, 18, 
         money > 0 and Color(150, 255, 150) or Color(255, 150, 150))
 end
 
 
-    -- Кнопка закрытия
+    -- button Vkladok
     local closeBtn = vgui.Create("DButton", frame)
     closeBtn:SetText("✕")
     closeBtn:SetFont("DermaLarge")
@@ -93,7 +90,7 @@ end
         draw.RoundedBox(0, 0, 0, w, h, self:IsHovered() and Color(200, 50, 50) or Color(80, 80, 80))
     end
 
-    -- Вкладки
+    -- Vkladki
     local tabs = vgui.Create("DPropertySheet", frame)
     tabs:SetPos(10, 60)
     tabs:SetSize(630, 680)
@@ -101,7 +98,7 @@ end
     tabs.Paint = function() end
 
 
-    -- Стиль вкладок
+    -- Stili Vkladok
     function SkinTabs(sheet)
         for _, tab in pairs(sheet.Items) do
             if IsValid(tab.Tab) then
@@ -123,9 +120,9 @@ end
     end
 
 
-    -- Создание вкладок
-    local weaponsTab = vgui.Create("DPanel")
-    weaponsTab.Paint = function() end
+    -- Create vkladok
+    local propTab = vgui.Create("DPanel")
+    propTab.Paint = function() end
     
     local medsTab = vgui.Create("DPanel")
     medsTab.Paint = function() end
@@ -133,19 +130,19 @@ end
     local miscTab = vgui.Create("DPanel")
     miscTab.Paint = function() end
 
-    tabs:AddSheet("", weaponsTab, "icon16/gun.png")
+    tabs:AddSheet("", propTab, "icon16/house.png")
     tabs:AddSheet("", medsTab, "icon16/heart.png")
     tabs:AddSheet("", miscTab, "icon16/box.png")
 
     SkinTabs(tabs)
 
-    -- Наполнение вкладок
-    AddWeaponsTab(weaponsTab)
+    -- Napolnenie Vkladok
+    AddpropTab(propTab)
     AddMedicalTab(medsTab)
     AddMiscTab(miscTab)
 end
 
--- Добавление товара
+-- add tovar
 function AddItemToTab(parent, name, class, price, modelOrIcon, rarityColor)
     if not IsValid(parent) then return end
     
@@ -167,7 +164,7 @@ function AddItemToTab(parent, name, class, price, modelOrIcon, rarityColor)
         end
     end
 
-    -- Отображение модели или иконки
+    -- otobrashenie Model and iconka
     if type(modelOrIcon) == "string" and modelOrIcon:EndsWith(".mdl") and file.Exists(modelOrIcon, "GAME") then
         local modelPanel = vgui.Create("DModelPanel", panel)
         modelPanel:SetSize(80, 80)
@@ -189,9 +186,9 @@ function AddItemToTab(parent, name, class, price, modelOrIcon, rarityColor)
         icon:SetImage(iconPath)
     end
 
-    -- Кнопка покупки
+    -- button buy
     local btn = vgui.Create("DButton", panel)
-    btn:SetText("КУПИТЬ")
+    btn:SetText("Buy")
     btn:SetSize(100, 30)
     btn:SetPos(490, 25)
     btn:SetFont("DermaDefaultBold")
@@ -208,34 +205,33 @@ function AddItemToTab(parent, name, class, price, modelOrIcon, rarityColor)
     end
 end
 
-
--- Наполнение вкладок
-function AddWeaponsTab(tab)
+-- Napolnenie Vkladok
+function AddpropTab(tab)
     local scroll = vgui.Create("DScrollPanel", tab)
     scroll:Dock(FILL)
 
-    AddItemToTab(scroll, "AK-47", "weapon_ak47", 2500, "models/weapons/w_rif_ak47.mdl", Color(200, 60, 60))
-    AddItemToTab(scroll, "Дробовик", "weapon_shotgun", 1800, "models/weapons/w_shotgun.mdl", Color(200, 100, 60))
-    AddItemToTab(scroll, "Desert Eagle", "weapon_deagle", 1200, "models/weapons/w_pist_deagle.mdl", Color(180, 180, 60))
+    AddItemToTab(scroll, "Setka", "models/props_building_details/Storefront_Template001a_Bars.mdl", 2500, "models/props_building_details/Storefront_Template001a_Bars.mdl", Color(200, 60, 60))
+    AddItemToTab(scroll, "lock door", "models/props_doors/door03_slotted_left.mdl", 1800, "models/props_doors/door03_slotted_left.mdl", Color(200, 100, 60))
+    AddItemToTab(scroll, "barrier", "models/props_c17/concrete_barrier001a.mdl", 1200, "models/props_c17/concrete_barrier001a.mdl", Color(180, 180, 60))
 end
 
 function AddMedicalTab(tab)
     local scroll = vgui.Create("DScrollPanel", tab)
     scroll:Dock(FILL)
 
-    AddItemToTab(scroll, "Аптечка", "item_healthkit", 500, "icon16/heart.png", Color(60, 200, 60))
-    AddItemToTab(scroll, "Адреналин", "item_adrenaline", 300, "icon16/pill.png", Color(100, 200, 100))
+    AddItemToTab(scroll, "Big Heal", "item_healthkit", 500, "icon16/heart.png", Color(60, 200, 60))
+    AddItemToTab(scroll, "Test", "item_adrenaline", 300, "icon16/pill.png", Color(100, 200, 100))
 end
 
 function AddMiscTab(tab)
     local scroll = vgui.Create("DScrollPanel", tab)
     scroll:Dock(FILL)
 
-    AddItemToTab(scroll, "Взрывчатка", "ent_explosive", 3500, "icon16/bomb.png", Color(200, 80, 80))
-    AddItemToTab(scroll, "Контейнер", "item_container", 800, "icon16/box.png", Color(140, 140, 140))
+    AddItemToTab(scroll, "Test", "ent_explosive", 3500, "icon16/bomb.png", Color(200, 80, 80))
+    AddItemToTab(scroll, "Xyina", "item_container", 800, "icon16/box.png", Color(140, 140, 140))
 end
 
--- Открытие меню
+-- Open menu
 hook.Add("PlayerButtonDown", "OpenBMenu", function(ply, key)
     if key == KEY_Q then
         OpenBlackMarketMenu()

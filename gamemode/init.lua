@@ -2,20 +2,19 @@ AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 include("shared.lua")
 
-GM.Name = "Мой Крутой Режим"
+GM.Name = "im true kenkaneki"
 GM.Author = "Moonstreal"
 GM.Email = ""
 GM.Website = ""
 
 DeriveGamemode("base") 
--- Игрок присоединился
--- В самом начале gamemode/init.lua
+
 if SERVER then
-    AddCSLuaFile("player_class/player.lua") -- Для синхронизации с клиентом
+    AddCSLuaFile("player_class/player.lua") 
 end
 function GM:PlayerSpawn(ply)
     ply:SetHealth(100)
-    ply:Give("weapon_physgun")           -- Выдаем оружие
+    ply:Give("weapon_physgun")           
     ply:SetupHands()
 end
 if SERVER then

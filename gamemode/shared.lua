@@ -1,30 +1,24 @@
-
 GM = GM or GAMEMODE
 
 GM.TeamBased = false
 
 function GM:Initialize()
-    print("bybybyby ok!")
+    print("Gamemode initialized!")
 end
 
--- При первом заходе игрока
-hook.Add("PlayerInitialSpawn", "SetupPlayerMoney", function(ply)
-    ply:SetMoney(3000) -- Стартовые деньги (можно сохранять в БД)
-end)
-
--- При смерти (опционально: штраф за смерть)
-hook.Add("PlayerDeath", "PenaltyOnDeath", function(ply)
-    ply:AddMoney(-200) -- Игрок теряет 50$
-end)
-
--- Добавить в shared.lua
+util.AddNetworkString("BM_UpdateMoney")
 util.AddNetworkString("BM_BuyItem")
 
--- Методы для денег
 local PLAYER = FindMetaTable("Player")
 
+
+util.AddNetworkString("BM_UpdateMoney")
+
 function PLAYER:SetMoney(amount)
-    self:SetNWInt("BM_Money", math.max(0, amount))
+    self:SetNWInt("BM_Money", amount)
+    net.Start("BM_UpdateMoney")
+        net.WriteInt(amount, 32)
+    net.Send(self)
 end
 
 function PLAYER:GetMoney()
@@ -32,15 +26,23 @@ function PLAYER:GetMoney()
 end
 
 function PLAYER:AddMoney(amount)
-    self:SetMoney(self:GetMoney() + amount)
+    self:SetMoney(self:GetMoney() + (tonumber(amount) or 0))
 end
 
--- Обработка покупки
+hook.Add("PlayerInitialSpawn", "BM_SetupMoney", function(ply)
+    ply:SetMoney(6000) -- start Money
+    
+    print("[Money] Player", ply:Nick(), "spawned with $6000")
+end) --debug
+
+-- obrabotka Money
 net.Receive("BM_BuyItem", function(len, ply)
     if not IsValid(ply) then return end
     
     local itemClass = net.ReadString()
     local price = net.ReadUInt(32)
+    
+    if not itemClass or not price then return end
     
     if ply:GetMoney() < price then
         ply:ChatPrint("No money!")
@@ -50,6 +52,15 @@ net.Receive("BM_BuyItem", function(len, ply)
     ply:AddMoney(-price)
     ply:Give(itemClass)
     ply:ChatPrint("You buy: " .. itemClass)
+    
+    print("[Shop]", ply:Nick(), "buy", itemClass, "for", price.."$")
 end)
--- На сервере (например, в shared.lua)
-player.GetAll()[1]:SetNWInt("BM_Money", 1000)
+
+-- comanda vidachi
+concommand.Add("bm_givemoney", function(ply, cmd, args)
+    if IsValid(ply) then
+        local amount = tonumber(args[1]) or 1000
+        ply:AddMoney(amount)
+        ply:ChatPrint("you add "..amount.."$")
+    end
+end)

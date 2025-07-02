@@ -5,7 +5,7 @@ function PLAYER:SetMoney(amount)
 end
 
 function PLAYER:GetMoney()
-    return self:GetNWInt("PlayerMoney", 1000) -- 1000 Ч стартовые деньги
+    return self:GetNWInt("PlayerMoney", 1000) 
 end
 
 function PLAYER:AddMoney(amount)
