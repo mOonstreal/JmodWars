@@ -1,0 +1,7 @@
+"JmodWars"
+{
+    "title"    "JmodWars"
+    "version"  "1.0"
+    "author"   "Noplease"
+    "menusystem" "1"
+}
